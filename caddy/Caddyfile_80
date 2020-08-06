@@ -1,0 +1,6 @@
+:80 {
+  bind 127.0.0.1
+  tls off
+  root /etc/caddy/wwwroot
+  index index.html
+}
