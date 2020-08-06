@@ -1,0 +1,2 @@
+# onekey
+for install script
