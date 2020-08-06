@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+
+### BEGIN INIT INFO
+# Provides:          Trojan-GFW
+# Required-Start:    $network $local_fs $remote_fs
+# Required-Stop:     $network $local_fs $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: An unidentifiable mechanism that helps you bypass GFW
+# Description:       Start or stop the Trojan server
+### END INIT INFO
+
+
+DAEMON=/usr/local/bin/trojan
+NAME=Trojan-GFW
+CONF=/etc/trojan/config.json
+LOG=/var/log/trojan.log
+RET_VAL=0
+
+[ -x $DAEMON ] || exit 0
+
+if [ ! -f $DAEMON ]; then
+    echo "$NAME config file $DAEMON not found"
+    exit 1
+fi
+
+if [ ! -f $CONF ]; then
+    echo "$NAME config file $CONF not found"
+    exit 1
+fi
+
+check_running() {
+    PID=`ps -ef | grep -v grep | grep $DAEMON | awk -F " " '{print $2}'`
+    if [ -n  "$PID" ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+do_status() {
+    check_running
+    case $? in
+        0)
+        echo "$NAME (pid $PID) is running..."
+        ;;
+        1)
+        echo "$NAME is stopped"
+        RET_VAL=1
+        ;;
+    esac
+}
+
+do_start() {
+    if check_running; then
+        echo "$NAME (pid $PID) is already running..."
+        return 0
+    fi
+    $DAEMON -c $CONF -l $LOG &
+    if check_running; then
+        echo "Starting $NAME success"
+    else
+        echo "Starting $NAME failed"
+        RET_VAL=1
+    fi
+}
+
+do_stop() {
+    if check_running; then
+        kill -9 $PID
+        echo "Stopping $NAME success"
+    else
+        echo "$NAME is stopped"
+        RET_VAL=1
+    fi
+}
+
+do_restart() {
+    do_stop
+    sleep 0.5
+    do_start
+}
+
+case "$1" in
+    start|stop|restart|status)
+    do_$1
+    ;;
+    *)
+    echo "Usage: $0 { start | stop | restart | status }"
+    RET_VAL=1
+    ;;
+esac
+
+exit $RET_VAL
